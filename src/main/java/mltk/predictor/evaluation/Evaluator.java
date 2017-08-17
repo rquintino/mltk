@@ -11,23 +11,24 @@ import mltk.predictor.ProbabilisticClassifier;
 import mltk.predictor.Classifier;
 import mltk.predictor.Regressor;
 import mltk.predictor.io.PredictorReader;
+import mltk.util.OptimUtils;
 
 /**
  * Class for making evaluations.
- *
+ * 
  * @author Yin Lou
- *
+ * 
  */
 public class Evaluator {
 
 	/**
 	 * Returns the area under ROC curve.
-	 *
+	 * 
 	 * @param classifier a classifier that outputs probability.
 	 * @param instances the instances.
 	 * @return the area under ROC curve.
 	 */
-	public static double evalAreaUnderROC(ProbabilisticClassifier classifier, Instances instances, String outPath) {
+	public static double evalAreaUnderROC(ProbabilisticClassifier classifier, Instances instances) {
 		double[] probs = new double[instances.size()];
 		double[] targets = new double[instances.size()];
 		for (int i = 0; i < probs.length; i++) {
@@ -35,14 +36,12 @@ public class Evaluator {
 			probs[i] = classifier.predictProbabilities(instance)[1];
 			targets[i] = instance.getTarget();
 		}
-		AUC auc = new AUC();
-		auc.outPath = outPath;
-		return auc.eval(probs, targets);
+		return new AUC().eval(probs, targets);
 	}
 
 	/**
 	 * Returns the root mean squared error.
-	 *
+	 * 
 	 * @param preds the predictions.
 	 * @param targets the targets.
 	 * @return the root mean squared error.
@@ -59,7 +58,7 @@ public class Evaluator {
 
 	/**
 	 * Returns the root mean squared error.
-	 *
+	 * 
 	 * @param regressor the regressor.
 	 * @param instances the instances.
 	 * @return the root mean squared error.
@@ -79,7 +78,7 @@ public class Evaluator {
 
 	/**
 	 * Returns the classification error.
-	 *
+	 * 
 	 * @param classifier the classifier.
 	 * @param instances the instances.
 	 * @return the classification error.
@@ -97,40 +96,72 @@ public class Evaluator {
 		error /= instances.size();
 		return error;
 	}
+	
+	/**
+	 * Returns the logistic loss.
+	 * 
+	 * @param regressor the regressor.
+	 * @param instances the instances.
+	 * @return the logistic loss.
+	 */
+	public static double evalLogisticLoss(Regressor regressor, Instances instances) {
+		double loss = 0;
+		for (int i = 0; i < instances.size(); i++) {
+			Instance instance = instances.get(i);
+			double pred = regressor.regress(instance);
+			loss += OptimUtils.computeLogisticLoss(pred, instance.getTarget());
+		}
+		loss /= instances.size();
+		return loss;
+	}
+	
+	/**
+	 * Returns the mean absolute error.
+	 * 
+	 * @param regressor the regressor.
+	 * @param instances the instances.
+	 * @return the mean absolute error.
+	 */
+	public static double evalMAE(Regressor regressor, Instances instances) {
+		double mae = 0;
+		for (int i = 0; i < instances.size(); i++) {
+			Instance instance = instances.get(i);
+			double target = instance.getTarget();
+			double pred = regressor.regress(instance);
+			double d = target - pred;
+			mae += Math.abs(d);
+		}
+		mae /= instances.size();
+		return mae;
+	}
 
 	static class Options {
 
 		@Argument(name = "-r", description = "attribute file path")
-		String attPath = "binned_attr.txt";
+		String attPath = null;
 
-		@Argument(name = "-d", description = "data set path")
-		String dataPath = "binned_test.txt";
+		@Argument(name = "-d", description = "data set path", required = true)
+		String dataPath = null;
 
 		@Argument(name = "-m", description = "model path", required = true)
 		String modelPath = null;
 
-		@Argument(name = "-e", description = "AUC (a), Error (c), RMSE (r) (default: r)")
+		@Argument(name = "-e", description = "AUC (a), Error (c), Logistic Loss (l), MAE(m), RMSE (r) (default: r)")
 		String task = "r";
-
-		@Argument(name = "-o", description = "output path")
-		String outPath = null;
 
 	}
 
 	/**
-	 * <p>
-	 *
+	 * Evaluates a predictor.
+	 * 
 	 * <pre>
-	 * Usage: Evaluator
+	 * Usage: mltk.predictor.evaluation.Evaluator
 	 * -d	data set path
 	 * -m	model path
 	 * [-r]	attribute file path
-	 * [-e]	AUC (a), Error (c), RMSE (r) (default: r)
-	 * [-o] output path
+	 * [-e]	AUC (a), Error (c), Logistic Loss (l), MAE(m), RMSE (r) (default: r)
 	 * </pre>
-	 *
-	 * </p>
-	 *
+	 * 
 	 * @param args the command line arguments.
 	 * @throws Exception
 	 */
@@ -149,18 +180,23 @@ public class Evaluator {
 
 		switch (opts.task) {
 			case "a":
-				ProbabilisticClassifier probClassifier = (ProbabilisticClassifier) predictor;
-				double auc = Evaluator.evalAreaUnderROC(probClassifier, instances, opts.outPath);
+				double auc = evalAreaUnderROC((ProbabilisticClassifier) predictor, instances);
 				System.out.println("AUC: " + auc);
 				break;
 			case "c":
-				Classifier classifier = (Classifier) predictor;
-				double error = Evaluator.evalError(classifier, instances);
+				double error = evalError((Classifier) predictor, instances);
 				System.out.println("Error: " + error);
 				break;
+			case "l":
+				double logisticLoss = evalLogisticLoss((Regressor) predictor, instances);
+				System.out.println("Logistic Loss: " + logisticLoss);
+				break;
+			case "m":
+				double mae = evalMAE((Regressor) predictor, instances);
+				System.out.println("MAE: " + mae);
+				break;
 			case "r":
-				Regressor regressor = (Regressor) predictor;
-				double rmse = Evaluator.evalRMSE(regressor, instances);
+				double rmse = evalRMSE((Regressor) predictor, instances);
 				System.out.println("RMSE: " + rmse);
 				break;
 			default:
