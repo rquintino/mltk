@@ -56,6 +56,7 @@ public class InstancesReader {
 			List<Attribute> attributes = pair.v1;
 			Instances instances = new Instances(attributes, pair.v2);
 			int totalLength = instances.dimension();
+			System.out.println(classIndex);
 			if (classIndex != -1) {
 				totalLength++;
 			}
