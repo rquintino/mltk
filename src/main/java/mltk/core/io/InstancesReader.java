@@ -67,11 +67,11 @@ public class InstancesReader {
 				if (line == null) {
 					break;
 				}
-				System.out.println(delimiter)
+				System.out.println(delimiter);
 				String[] data = line.split(delimiter);
 				Instance instance = null;
-				System.out.println(data.length)
-				System.out.println(totalLength)
+				System.out.println(data.length);
+				System.out.println(totalLength);
 				
 				if (data.length >= 2 && data[1].indexOf(':') >= 0) {
 					// Sparse instance
