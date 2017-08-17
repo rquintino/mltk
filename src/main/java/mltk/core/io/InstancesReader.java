@@ -63,7 +63,7 @@ public class InstancesReader {
 			for (;;) {
 				
 				String line = br.readLine();
-				System.out.println(line)
+				System.out.println(line);
 				if (line == null) {
 					break;
 				}
