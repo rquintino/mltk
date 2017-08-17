@@ -18,19 +18,64 @@ import mltk.util.OptimUtils;
 
 /**
  * Class for making predictions.
- * 
+ *
  * @author Yin Lou
- * 
+ *
  */
 public class Predictor {
-	
+
+	/**
+	 * Makes predictions for a dataset.
+	 *
+	 * @param regressor the model.
+	 * @param instances the dataset.
+	 * @param path the output path.
+	 * @param residual <code>true</code> if residuals are the output.
+	 * @throws IOException
+	 */
+	public static void predict(Regressor regressor, Instances instances, String path, boolean residual)
+			throws IOException {
+		PrintWriter out = new PrintWriter(path);
+		if (residual) {
+			for (Instance instance : instances) {
+				double pred = regressor.regress(instance);
+				out.println(instance.getTarget() - pred);
+			}
+		} else {
+			for (Instance instance : instances) {
+				double pred = regressor.regress(instance);
+				out.println(pred);
+			}
+		}
+		out.flush();
+		out.close();
+	}
+
+	/**
+	 * Makes predictions for a dataset.
+	 *
+	 * @param classifier the model.
+	 * @param instances the dataset.
+	 * @param path the output path.
+	 * @throws IOException
+	 */
+	public static void predict(Classifier classifier, Instances instances, String path) throws IOException {
+		PrintWriter out = new PrintWriter(path);
+		for (Instance instance : instances) {
+			int pred = classifier.classify(instance);
+			out.println(pred);
+		}
+		out.flush();
+		out.close();
+	}
+
 	static class Options {
 
 		@Argument(name = "-r", description = "attribute file path")
-		String attPath = null;
+		String attPath = "binned_attr.txt";
 
-		@Argument(name = "-d", description = "data set path", required = true)
-		String dataPath = null;
+		@Argument(name = "-d", description = "data set path")
+		String dataPath = "binned_train.txt";
 
 		@Argument(name = "-m", description = "model path", required = true)
 		String modelPath = null;
@@ -50,19 +95,21 @@ public class Predictor {
 	}
 
 	/**
-	 * Makes predictions on a dataset.
-	 * 
+	 * <p>
+	 *
 	 * <pre>
-	 * Usage: mltk.predictor.evaluation.Predictor
-	 * -d	data set path
+	 * Usage: Predictor
 	 * -m	model path
+	 * [-d]	data set path (default : binned_train.txt)
 	 * [-r]	attribute file path
 	 * [-p]	prediction path
 	 * [-R]	residual path
 	 * [-g]	task between classification (c) and regression (r) (default: r)
 	 * [-P]	output probablity (default: false)
 	 * </pre>
-	 * 
+	 *
+	 * </p>
+	 *
 	 * @param args the command line arguments.
 	 * @throws Exception
 	 */
@@ -154,51 +201,6 @@ public class Predictor {
 			default:
 				break;
 		}
-	}
-
-	/**
-	 * Makes predictions for a dataset.
-	 * 
-	 * @param regressor the model.
-	 * @param instances the dataset.
-	 * @param path the output path.
-	 * @param residual <code>true</code> if residuals are the output.
-	 * @throws IOException
-	 */
-	public static void predict(Regressor regressor, Instances instances, String path, boolean residual)
-			throws IOException {
-		PrintWriter out = new PrintWriter(path);
-		if (residual) {
-			for (Instance instance : instances) {
-				double pred = regressor.regress(instance);
-				out.println(instance.getTarget() - pred);
-			}
-		} else {
-			for (Instance instance : instances) {
-				double pred = regressor.regress(instance);
-				out.println(pred);
-			}
-		}
-		out.flush();
-		out.close();
-	}
-
-	/**
-	 * Makes predictions for a dataset.
-	 * 
-	 * @param classifier the model.
-	 * @param instances the dataset.
-	 * @param path the output path.
-	 * @throws IOException
-	 */
-	public static void predict(Classifier classifier, Instances instances, String path) throws IOException {
-		PrintWriter out = new PrintWriter(path);
-		for (Instance instance : instances) {
-			int pred = classifier.classify(instance);
-			out.println(pred);
-		}
-		out.flush();
-		out.close();
 	}
 
 }
